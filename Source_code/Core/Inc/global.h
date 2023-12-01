@@ -30,7 +30,14 @@ typedef enum {
 	MAN_YELLOWRED,
 } eTrafficLightState;
 
+typedef enum {
+	BEGIN,
+	PDRED,
+	PDGREEN
+} ePedestrianLight;
+
 extern eTrafficLightState led_status;
+extern ePedestrianLight ped_status;
 
 extern int redTime;
 extern int greenTime;

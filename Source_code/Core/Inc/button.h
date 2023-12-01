@@ -10,8 +10,8 @@
 
 #include "main.h"
 
-#define NORMAL_STATE SET
-#define PRESSED_STATE RESET
+#define NORMAL_STATE 1
+#define PRESSED_STATE 0
 
 #define NUM_BUTTON 4
 

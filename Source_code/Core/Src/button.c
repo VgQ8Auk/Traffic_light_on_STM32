@@ -1,20 +1,21 @@
 /*
  * button.c
  *
- *  Created on: Nov 25, 2023
+ *  Created on: Nov 28, 2023
  *      Author: Admin
  */
 
 #include "button.h"
 
+uint16_t pin[4] = {PED_BTN_Pin, BTN1_Pin, BTN2_Pin, BTN3_Pin};
 
-int KeyReg0 = NORMAL_STATE;
-int KeyReg1 = NORMAL_STATE;
-int KeyReg2 = NORMAL_STATE;
-int KeyReg3 = NORMAL_STATE;
+int KeyReg0[NUM_BUTTON] = {NORMAL_STATE, NORMAL_STATE, NORMAL_STATE, NORMAL_STATE};
+int KeyReg1[NUM_BUTTON] = {NORMAL_STATE, NORMAL_STATE, NORMAL_STATE, NORMAL_STATE};
+int KeyReg2[NUM_BUTTON] = {NORMAL_STATE, NORMAL_STATE, NORMAL_STATE, NORMAL_STATE};
+int KeyReg3[NUM_BUTTON] = {NORMAL_STATE, NORMAL_STATE, NORMAL_STATE, NORMAL_STATE};
 
-int TimeOutForKeyPress =  200;
-int button_flag[NUM_BUTTON] = {0, 0, 0};
+int TimeOutForKeyPress[NUM_BUTTON] =  {200, 200, 200, 200};
+int button_flag[NUM_BUTTON] = {0, 0, 0, 0};
 
 int isButtonPressed(int num){
 	if(button_flag[num] == 1){
@@ -30,27 +31,44 @@ void subKeyProcess(int num){
 }
 
 void getKeyInput(){
-	KeyReg2 = KeyReg1;
-	KeyReg1 = KeyReg0;
-	//Add your button here
-	KeyReg0 = HAL_GPIO_ReadPin(PED_BTN_GPIO_Port, PED_BTN_Pin);
-
-	if ((KeyReg1 == KeyReg0) && (KeyReg1 == KeyReg2)){
-		if (KeyReg2 != KeyReg3){
-			KeyReg3 = KeyReg2;
-			if (KeyReg3 == PRESSED_STATE){
-				TimeOutForKeyPress = 200;
-				subKeyProcess(0);
-			}
+	for (int i=0; i < NUM_BUTTON; i++){
+		KeyReg2[i] = KeyReg1[i];
+		KeyReg1[i] = KeyReg0[i];
+		//Add your button here
+		switch (i){
+		case 0:
+			KeyReg0[i] = HAL_GPIO_ReadPin(PED_BTN_GPIO_Port, pin[i]);
+			break;
+		case 1:
+			KeyReg0[i] = HAL_GPIO_ReadPin(BTN1_GPIO_Port, pin[i]);
+			break;
+		case 2:
+			KeyReg0[i] = HAL_GPIO_ReadPin(BTN2_GPIO_Port, pin[i]);
+			break;
+		case 3:
+			KeyReg0[i] = HAL_GPIO_ReadPin(BTN3_GPIO_Port, pin[i]);
+			break;
+		default:
+			break;
 		}
 
-		else{ //press without release
-			TimeOutForKeyPress--;
-			if (TimeOutForKeyPress == 0){
-				KeyReg3 = NORMAL_STATE;
+
+		if ((KeyReg1[i] == KeyReg0[i]) && (KeyReg1[i] == KeyReg2[i])){
+			if (KeyReg2[i] != KeyReg3[i]){
+				KeyReg3[i] = KeyReg2[i];
+				if (KeyReg3[i] == PRESSED_STATE){
+					TimeOutForKeyPress[i] = 200;
+					subKeyProcess(i);
+				}
 			}
 
+			else{ //press without release
+				TimeOutForKeyPress[i]--;
+				if (TimeOutForKeyPress[i] == 0){
+					KeyReg3[i] = NORMAL_STATE;
+				}
+
+			}
 		}
 	}
 }
-

@@ -1,7 +1,7 @@
 /*
  * button.h
  *
- *  Created on: Nov 25, 2023
+ *  Created on: Nov 28, 2023
  *      Author: Admin
  */
 
@@ -10,10 +10,10 @@
 
 #include "main.h"
 
-#define NORMAL_STATE 1
-#define PRESSED_STATE 0
+#define NORMAL_STATE SET
+#define PRESSED_STATE RESET
 
-#define NUM_BUTTON 3
+#define NUM_BUTTON 4
 
 extern int button_flag[NUM_BUTTON];
 

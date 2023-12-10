@@ -14,6 +14,7 @@ void fsm_ped(){
 		offPEDLed();
 		if (isButtonPressed(0) == 1){
 			ped_flag = 1;
+			buzzer_on();
 			ped_status = led_status;
 			setTimer4(500);
 		}

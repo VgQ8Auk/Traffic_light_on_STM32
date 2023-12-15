@@ -7,7 +7,8 @@
 #include "global.h"
 
 eTrafficLightState led_status = INIT;
-ePedestrianLight ped_status = BEGIN;
+eTrafficLightState temp_status = INIT;
+eTrafficLightState ped_status = INIT;
 
 // First initialization for time
 int redTime = 5;
@@ -17,6 +18,10 @@ int yellowTime = 2;
 int newRed = 0;
 int newGreen = 0;
 int newYellow = 0;
+
+int pedTime = -1;
+int ped_flag = 0;
+int ped_sig = 0;
 
 int timerRoad1 = 0;
 int timerRoad2 = 0;

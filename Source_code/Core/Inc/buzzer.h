@@ -1,14 +1,20 @@
 /*
  * buzzer.h
  *
- *  Created on: Dec 9, 2023
- *      Author: quoca
+ *  Created on: Dec 10, 2023
+ *      Author: Admin
  */
-#include "main.h"
+
 #ifndef INC_BUZZER_H_
 #define INC_BUZZER_H_
 
-void buzzer_init();
-void buzzer_on();
-void buzzer_off();
+#include "global.h"
+#include "main.h"
+#include <math.h>
+
+extern int res;
+
+void startBuzzer();
+void offbuzzer();
+
 #endif /* INC_BUZZER_H_ */

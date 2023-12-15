@@ -22,8 +22,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "software_timer.h"
-#include "button.h"
+#include "global.h"
+#include "traffic_light_fsm.h"
+#include "ped_fsm.h"
+#include "UART.h"
+#include "scheduler.h"
+
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +49,8 @@
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
+UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -52,6 +59,7 @@ TIM_HandleTypeDef htim3;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_USART2_UART_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -59,32 +67,6 @@ static void MX_TIM3_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void testIO(){
-	// TEST IO HERE
-	HAL_GPIO_WritePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin,
-			HAL_GPIO_ReadPin(PED_BTN_GPIO_Port, PED_BTN_Pin));
-}
-
-void testAllLed(int counter){
-	switch (counter){
-	case 1:
-		HAL_GPIO_WritePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin, RESET);
-		HAL_GPIO_WritePin(TF_LED_2_GPIO_Port, TF_LED_2_Pin, SET);
-		HAL_GPIO_WritePin(TF_LED_3_GPIO_Port, TF_LED_3_Pin, RESET);
-		HAL_GPIO_WritePin(TF_LED_4_GPIO_Port, TF_LED_4_Pin, SET);
-		counter++;
-		break;
-	case 2:
-		HAL_GPIO_WritePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin, SET);
-		HAL_GPIO_WritePin(TF_LED_2_GPIO_Port, TF_LED_2_Pin, RESET);
-		HAL_GPIO_WritePin(TF_LED_3_GPIO_Port, TF_LED_3_Pin, SET);
-		HAL_GPIO_WritePin(TF_LED_4_GPIO_Port, TF_LED_4_Pin, RESET);
-		counter--;
-		break;
-	default:
-		break;
-	}
-}
 /* USER CODE END 0 */
 
 /**
@@ -116,22 +98,23 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM2_Init();
+  MX_USART2_UART_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
-  buzzer_init();
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_UART_Receive_IT(&huart2, &temp, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  setTimer1(1);
+  SCH_Add_Task(timerRun, 0, 1);
+  SCH_Add_Task(getKeyInput, 0, 1);
+  SCH_Add_Task(fsm_traffic_light, 0, 1);
+  SCH_Add_Task(fsm_ped, 0, 1);
   while (1)
   {
-	  if (timer1_flag == 1){
-		  HAL_GPIO_TogglePin(TF_LED_2_GPIO_Port, TF_LED_2_Pin);
-//		  HAL_GPIO_TogglePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin);
-		  setTimer1(1000);
-	  }
+	  SCH_Dispatch_Task();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -161,14 +144,13 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV16;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
@@ -198,7 +180,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 999;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9;
+  htim2.Init.Period = 63;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -234,6 +216,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
@@ -243,9 +226,18 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 63;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 9;
+  htim3.Init.Period = 999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
@@ -272,6 +264,39 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 9600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -279,8 +304,6 @@ static void MX_TIM3_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -301,7 +324,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : BTN3_Pin */
   GPIO_InitStruct.Pin = BTN3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(BTN3_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PED_LED_1_Pin TF_LED_2_Pin TF_LED_4_Pin TF_LED_3_Pin */
@@ -318,14 +341,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback ( TIM_HandleTypeDef * htim ){
-	timerRun();
-	getKeyInput();
+	SCH_Update();
 }
 /* USER CODE END 4 */
 
@@ -360,3 +380,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

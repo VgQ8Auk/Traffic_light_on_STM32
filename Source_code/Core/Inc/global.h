@@ -11,6 +11,7 @@
 #include "main.h"
 #include "software_timer.h"
 #include "button.h"
+#include "UART.h"
 
 // FSM for traffic light
 typedef enum {
@@ -28,16 +29,16 @@ typedef enum {
 	MAN_REDYELLOW,
 	MAN_GREENRED,
 	MAN_YELLOWRED,
+
+	// Set Led
+	SET_RED,
+	SET_YELLOW,
+	SET_GREEN
 } eTrafficLightState;
 
-typedef enum {
-	BEGIN,
-	PDRED,
-	PDGREEN
-} ePedestrianLight;
-
 extern eTrafficLightState led_status;
-extern ePedestrianLight ped_status;
+extern eTrafficLightState temp_status;
+extern eTrafficLightState ped_status;
 
 extern int redTime;
 extern int greenTime;
@@ -46,6 +47,10 @@ extern int yellowTime;
 extern int newRed;
 extern int newGreen;
 extern int newYellow;
+
+extern int pedTime;
+extern int ped_flag;
+extern int ped_sig;
 
 extern int timerRoad1;
 extern int timerRoad2;

@@ -10,6 +10,7 @@
 
 #include "global.h"
 #include "led_control.h"
+#include "buzzer.h"
 
 void fsm_traffic_light();
 

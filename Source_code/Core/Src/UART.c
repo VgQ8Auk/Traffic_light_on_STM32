@@ -36,3 +36,4 @@ void display(){
 		print_string("AUTOMATION MODE");
 	}
 }
+

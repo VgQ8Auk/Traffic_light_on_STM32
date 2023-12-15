@@ -10,6 +10,9 @@
 
 #include "global.h"
 #include "led_control.h"
+#include "buzzer.h"
+
+extern int TIME_OUT_FOR_PEDESTRIAN;
 
 void fsm_ped();
 

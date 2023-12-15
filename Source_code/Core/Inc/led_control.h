@@ -10,6 +10,8 @@
 
 #include "global.h"
 
+extern int toggle_signal;
+
 void offAllLed();
 void offTFLed();
 void offPEDLed();
@@ -24,5 +26,10 @@ void onTFYellow2();
 
 void onPEDRed();
 void onPEDGreen();
+void toggleGreen();
+
+void toggleLedRed();
+void toggleLedYellow();
+void toggleLedGreen();
 
 #endif /* INC_LED_CONTROL_H_ */

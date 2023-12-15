@@ -7,6 +7,7 @@
 
 #include "led_control.h"
 
+int toggle_sig = 0;
 // TURN OFF LED
 void offAllLed(){
 	HAL_GPIO_WritePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin, RESET);
@@ -68,4 +69,34 @@ void onPEDRed(){
 void onPEDGreen(){
 	HAL_GPIO_WritePin(PED_LED_1_GPIO_Port, PED_LED_1_Pin, RESET);
 	HAL_GPIO_WritePin(PED_LED_2_GPIO_Port, PED_LED_2_Pin, SET);
+}
+
+void toggleGreen(){
+	HAL_GPIO_TogglePin(PED_LED_2_GPIO_Port, PED_LED_2_Pin);
+}
+
+// TOGGLE TUNING MODE
+void toggleLedRed() {
+	HAL_GPIO_TogglePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin);
+	HAL_GPIO_TogglePin(TF_LED_3_GPIO_Port, TF_LED_3_Pin);
+}
+void toggleLedYellow(){
+	if (toggle_sig == 0){
+		HAL_GPIO_WritePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin, SET);
+		HAL_GPIO_WritePin(TF_LED_2_GPIO_Port, TF_LED_2_Pin, SET);
+		HAL_GPIO_WritePin(TF_LED_3_GPIO_Port, TF_LED_3_Pin, SET);
+		HAL_GPIO_WritePin(TF_LED_4_GPIO_Port, TF_LED_4_Pin, SET);
+		toggle_sig++;
+	}
+	else {
+		HAL_GPIO_WritePin(TF_LED_1_GPIO_Port, TF_LED_1_Pin, RESET);
+		HAL_GPIO_WritePin(TF_LED_2_GPIO_Port, TF_LED_2_Pin, RESET);
+		HAL_GPIO_WritePin(TF_LED_3_GPIO_Port, TF_LED_3_Pin, RESET);
+		HAL_GPIO_WritePin(TF_LED_4_GPIO_Port, TF_LED_4_Pin, RESET);
+		toggle_sig--;
+	}
+}
+void toggleLedGreen(){
+	HAL_GPIO_TogglePin(TF_LED_2_GPIO_Port, TF_LED_2_Pin);
+	HAL_GPIO_TogglePin(TF_LED_4_GPIO_Port, TF_LED_4_Pin);
 }
